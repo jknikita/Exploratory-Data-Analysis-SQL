@@ -54,6 +54,7 @@ SELECT `MONTH`, total_off
 ,SUM(total_off) OVER(order by `MONTH`) AS rolling_total
 FROM Rolling_Total;
 ```
+<img width="213" height="189" alt="EDA1" src="https://github.com/user-attachments/assets/ed2b2bdb-1af7-467b-93e9-8bf3c61514b4" />
 
 **Top 5 companies per year with chained CTEs**
 
@@ -74,6 +75,7 @@ SELECT *
 FROM Company_Year_Rank
 WHERE Ranking <= 5;
 ```
+<img width="285" height="186" alt="EDA2" src="https://github.com/user-attachments/assets/2973ac56-654e-4232-9480-b239f678b210" />
 
 ## Key Findings
 
@@ -84,6 +86,9 @@ WHERE Ranking <= 5;
 - **Complete shutdowns:** 116 companies laid off 100% of staff, the largest being Katerra.
 - **Trend:** layoffs accumulated to 385879 by March 2023, with the sharpest single month being January 2023 (84714).
 
+<img width="179" height="190" alt="eda3" src="https://github.com/user-attachments/assets/be3569d2-75b3-47be-93ef-45abdd49d13e" />
+
+<img width="195" height="171" alt="image" src="https://github.com/user-attachments/assets/72c1bb80-8339-4568-9fb6-dd8fd6083312" />
 
 
 ## Author
