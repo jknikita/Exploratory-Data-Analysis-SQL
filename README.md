@@ -1,48 +1,92 @@
-# Layoffs Exploratory Data Analysis in SQL (MySQL)
+# Layoffs Exploratory Data Analysis (MySQL)
 
-A practice project. After cleaning a public layoffs dataset (see the data cleaning repo), I followed Alex the Analyst's SQL tutorial to explore it with queries. This repo has my script and a short write-up.
+An exploratory analysis in MySQL of a global layoffs dataset, covering **2020 to 2023**. Using the cleaned table from the [data cleaning project](https://github.com/jknikita/Layoffs-Data-Cleaning-SQL), I looked at which companies, industries, countries and time periods were hit hardest by layoffs.
 
-## Data
+## Project Overview
 
-- The cleaned table `layoffs_staging2`: company, location, industry, total_laid_off, percentage_laid_off, date, stage, country, funds_raised_millions.
-- Covers 2020 to 2023.
-- The script needs that cleaned table to exist first. [Link to your data cleaning repo.]
+**Goal:** Answer practical questions about the layoffs data using SQL only.
 
-## Questions the script answers
+- Which companies laid off the most people?
+- Which companies shut down completely?
+- Which industries, countries and funding stages were most affected?
+- How did layoffs change over time (year, month and cumulative)?
+- Who were the top 5 companies by layoffs in each year?
 
-- What are the largest single layoffs, and which companies laid off 100% of their staff?
-- Which companies, industries, countries and funding stages had the most layoffs in total?
-- How many layoffs were there each year?
-- What is each company's average percentage laid off?
-- How did layoffs change month by month, and what is the running total?
-- Which five companies had the most layoffs in each year?
+## Tools & Skills Demonstrated
 
-## Queries worth a look
+- **MySQL** (MySQL Workbench)
+- Aggregations (`SUM`, `AVG`, `MAX`, `MIN`) with `GROUP BY`
+- CTEs, including multiple chained CTEs
+- Window functions: `SUM() OVER` for rolling totals and `DENSE_RANK() OVER (PARTITION BY ...)` for yearly rankings
+- Date functions (`YEAR`, `DATE_FORMAT`) and type casting (`CAST`)
 
-- **Monthly totals.** `SUBSTRING(date, 1, 7)` pulls the year and month so layoffs can be grouped by month.
-- **Rolling total.** A CTE of monthly totals, then `SUM(total_off) OVER (ORDER BY month)` to add each month to the ones before it.
-- **Top five per year.** Two CTEs: the first totals layoffs by company and year, the second ranks companies within each year with `DENSE_RANK() OVER (PARTITION BY years ORDER BY total_laid_off DESC)`. The final query keeps ranks 1 to 5.
+## Dataset
 
-## What I found
+- **Input table:** `layoffs_staging2`, the output of the Layoffs-Data-Cleaning-SQL(https://github.com/jknikita/Layoffs-Data-Cleaning-SQL)
+- **Columns:** company, location, industry, total laid off, percentage laid off, date, stage, country, funds raised (millions)
+- **Source:** Layoffs dataset
 
-[Add three or four findings from your own query results, with numbers. For example: the year with the most layoffs, the industries and countries at the top, and which companies ranked first each year.]
+## Analysis Sections
 
-## Limits
+| # | Section | Question answered |
+|---|---------|-------------------|
+| 1 | **Dataset overview** | What period does the data cover, and what are the maximum layoff values? |
+| 2 | **Complete shutdowns** | Which companies laid off 100% of staff, and how much funding had they raised? |
+| 3 | **By company** | Which companies had the most layoffs in total, and the highest average share of workforce cut? |
+| 4 | **By industry, country, stage** | Where were layoffs concentrated? |
+| 5 | **Over time** | How did layoffs trend by year and month, and what is the cumulative total? |
+| 6 | **Yearly top 5** | Which five companies had the most layoffs in each year? |
 
-- Many rows have no `total_laid_off` or percentage figure, so totals are lower than the real numbers.
-- `percentage_laid_off` is a share of each company's own staff, so it can't be compared with totals across companies of different sizes.
-- The data shows reported layoffs only.
+## Key Techniques
 
-## SQL used
+**Rolling total by month**
 
-`GROUP BY` and aggregates, `MAX`, `AVG`, `SUM`, `SUBSTRING`, `YEAR`, CTEs, window functions (`SUM() OVER`, `DENSE_RANK()`).
+```sql
+WITH Rolling_Total AS
+(
+select SUBSTRING(`date`, 1, 7) AS `MONTH`, SUM(total_laid_off) AS total_off
+from layoffs_staging2
+WHERE  SUBSTRING(`date`, 1, 7) IS NOT NULL
+GROUP BY `MONTH`
+ORDER BY 1 ASC
+)
+SELECT `MONTH`, total_off
+,SUM(total_off) OVER(order by `MONTH`) AS rolling_total
+FROM Rolling_Total;
+```
 
-## How to run
+**Top 5 companies per year with chained CTEs**
 
-1. Use MySQL 8 or later.
-2. Build `layoffs_staging2` first by running the cleaning script.
-3. Run `exploratory_data_analysis.sql` one query at a time and look at each result.
+```sql
 
-## Files
+WITH Company_Year(company, years, total_laid_off) AS
+(
+select company , year(`date`), sum(total_laid_off)
+from layoffs_staging2
+group by company, year(`date`)
+), Company_Year_Rank AS
+(SELECT *, 
+dense_rank() OVER (PARTITION BY years order by total_laid_off desc) AS Ranking
+FROM Company_Year
+WHERE years is not null
+)
+SELECT *
+FROM Company_Year_Rank
+WHERE Ranking <= 5;
+```
 
-- `exploratory_data_analysis.sql`: the exploration script
+## Key Findings
+
+- **Peak year:** 2023 had the most layoffs, with 127277 people.
+- **Most affected company:** Amazon laid off 18150 in total.
+- **Most affected industry:** Consumer, with 47082 layoffs.
+- **Most affected country:** United States, with 258159 layoffs.
+- **Complete shutdowns:** 116 companies laid off 100% of staff, the largest being Katerra.
+- **Trend:** layoffs accumulated to 385879 by March 2023, with the sharpest single month being January 2023 (84714).
+
+
+
+## Author
+
+**Nikita Maria Johnson**
+[LinkedIn](https://www.linkedin.com/in/nikita2000) | [GitHub](https://github.com/Nikitaj-11)
